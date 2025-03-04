@@ -4,10 +4,11 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const axios = require('axios');
+const cors = require('cors');
 
 // Middleware to parse JSON payloads
 app.use(express.json());
-
+app.use(cors());
 // (Optional) Serve static files for your dashboard (if any)
 // app.use(express.static('public'));
 
