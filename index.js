@@ -2,17 +2,24 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http);
 const axios = require('axios');
 const cors = require('cors');
 
-
-// Middleware to parse JSON payloads
+// Use CORS middleware for Express routes
 app.use(express.json());
 app.use(cors());
 
+// Initialize Socket.IO with CORS configuration
+const io = require('socket.io')(http, {
+  cors: {
+    origin: "http://aift.techloom.tech", // Allow only your client origin
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
 // (Optional) Serve static files for your dashboard (if any)
-// app.use(express.static('public'));
+app.use(express.static('public'));
 
 // POST endpoint to receive sensor data
 app.post('/endpoint', (req, res) => {
@@ -50,7 +57,6 @@ http.listen(PORT, () => {
   // Once the server is running, start sending sensor data
   setInterval(sendSensorData, 5000);
 });
-
 
 // --- Sensor Client Code --- //
 
