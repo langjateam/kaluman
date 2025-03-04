@@ -5,14 +5,21 @@ const app = express();
 // Middleware to parse JSON payloads
 app.use(express.json());
 
-// POST endpoint to receive sensor data and optional Gemini response
+// POST endpoint to receive sensor data and recommended crops
 app.post('/endpoint', (req, res) => {
   const sensorData = req.body;
-  console.log('Received sensor data:', sensorData);
+
+  // If there is a geminiResponse field, rename it to recommendedCrops
+  if (sensorData.geminiResponse) {
+    sensorData.recommendedCrops = sensorData.geminiResponse;
+    delete sensorData.geminiResponse;
+  }
+
+  console.log('Received sensor data with recommended crops:', sensorData);
 
   // You can add additional processing or saving of sensorData here
 
-  res.status(200).json({ message: 'Data received successfully' });
+  res.status(200).json({ message: 'Data received successfully with recommended crops' });
 });
 
 // Start the server
