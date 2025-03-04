@@ -1,39 +1,85 @@
-// server.js
+// app.js
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
+const axios = require('axios');
 
 // Middleware to parse JSON payloads
 app.use(express.json());
-// Serve static files from the "public" directory
-app.use(express.static('public'));
 
-// POST endpoint to receive sensor data and recommended crops
+// (Optional) Serve static files for your dashboard (if any)
+// app.use(express.static('public'));
+
+// POST endpoint to receive sensor data
 app.post('/endpoint', (req, res) => {
-  const sensorData = req.body;
-
-  // If there is a geminiResponse field, rename it to recommendedCrops
-  if (sensorData.geminiResponse) {
-    sensorData.recommendedCrops = sensorData.geminiResponse;
-    delete sensorData.geminiResponse;
+  let data = req.body;
+  
+  // Rename geminiResponse to recommendedCrops if present
+  if (data.geminiResponse) {
+    data.recommendedCrops = data.geminiResponse;
+    delete data.geminiResponse;
   }
-
-  console.log('Received sensor data with recommended crops:', sensorData);
-
-  // Immediately push data to the dashboard via Socket.IO
-  io.emit('newData', sensorData);
-
-  res.status(200).json({ message: 'Data received and pushed to dashboard successfully with recommended crops' });
+  
+  console.log("Received sensor data:", data);
+  
+  // Emit the sensor data to all connected Socket.IO clients
+  io.emit('newData', data);
+  
+  // Respond with a success status and the data received
+  res.json({ status: 'success', data });
 });
 
-// Log when a new client connects
+// Socket.IO connection handler
 io.on('connection', (socket) => {
-  console.log('A client connected:', socket.id);
+  console.log('New client connected');
+  
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
+  });
 });
 
-// Start the server
+// Start the server on a designated port
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  
+  // Once the server is running, start sending sensor data
+  setInterval(sendSensorData, 5000);
 });
+
+
+// --- Sensor Client Code --- //
+
+// Function to generate dummy sensor data
+function getRandomSensorData() {
+  // Generate random values within a realistic range
+  const temperature = (20 + Math.random() * 10).toFixed(2); // 20°C - 30°C
+  const humidity = (40 + Math.random() * 20).toFixed(2);     // 40% - 60%
+  const pH = (6.0 + Math.random() * 2.0).toFixed(2);         // pH 6.0 - 8.0
+  const moisture = (30 + Math.random() * 40).toFixed(2);       // 30% - 70%
+  // Dummy geminiResponse which will be renamed to recommendedCrops by the server
+  const geminiResponse = "Wheat, Rice";
+
+  return {
+    temperature,
+    humidity,
+    pH,
+    moisture,
+    geminiResponse
+  };
+}
+
+// Function to send sensor data to the /endpoint
+function sendSensorData() {
+  const data = getRandomSensorData();
+  console.log("Sending sensor data:", data);
+
+  axios.post(`http://localhost:${PORT}/endpoint`, data)
+    .then((response) => {
+      console.log("Response from server:", response.data);
+    })
+    .catch((error) => {
+      console.error("Error sending sensor data:", error.message);
+    });
+}
