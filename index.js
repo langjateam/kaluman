@@ -12,7 +12,7 @@ app.use(cors());
 // Initialize Socket.IO with CORS configuration
 const io = require('socket.io')(http, {
   cors: {
-    origin: "http://aift.techloom.tech", // Allow only your client origin
+    origin: "*", // Allow only your client origin
     methods: ["GET", "POST"],
     credentials: true
   }
